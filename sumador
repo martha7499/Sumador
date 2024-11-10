@@ -1,0 +1,31 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: cinvestav
+// Engineer: Martha Guadalupe Macías Martínez
+// 
+// Create Date: 09.11.2024 18:31:13
+// Design Name: sumador 2.0
+// Module Name: sumador
+// Project Name: sumador 
+// Target Devices: altera
+// Tool Versions: ~~~
+// Description: This is a DUT with only two inputs, them are a variable of
+//              add, next the result is one output.
+// Dependencies: ~~~
+// 
+// Revision: 1
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module sumador #(parameter WIDTH = 4)(
+    output [(WIDTH - 1): 0] result,
+    input [(WIDTH - 1): 0] a,
+    input [(WIDTH - 1): 0] b
+);
+ 
+assign result = a + b;
+ 
+endmodule
