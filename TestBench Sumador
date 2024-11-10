@@ -1,0 +1,181 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: CINVESTAV
+// Engineer: Martha Guadalupe Macias Martínez
+// 
+// Create Date: 09.11.2024 19:04:48
+// Design Name: sumador 2.0
+// Module Name: tb
+// Project Name: sumador
+// Target Devices: ALTERA
+// Tool Versions: ~~~
+// Description: This is a test bench about the adder
+// 
+// Dependencies: ~~
+// 
+// Revision:0
+// Revision 0.01 - File Created
+// Additional Comments:~~
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+   // parameter ADDER_WIDTH = 8;  ... de Miguel Angel Rivera Acosta
+              //Miguel Angel Rivera Acosta
+                //11:45 a.m.
+module tb;
+ 
+  parameter ADDER_WIDTH = 8; //asignacion de la variable ADDER_WIDTH
+
+  adder_intf #(ADDER_WIDTH) adder_intf_i(); // Creamos la instancia de la interface
+  event TEST1_EV;
+  event TEST2_EV;
+ 
+  sumador #(ADDER_WIDTH /*Pre-synthesis*/ ) DUT (
+      .result(adder_intf_i.result), // conectamos el puerto result del DUT con la variable result de la instancia de la interface
+      .a(adder_intf_i.a),
+      .b(adder_intf_i.b)
+  );
+  `define TEST1
+  `define TEST2
+  
+  `ifdef TEST1
+   // Prueba 1 - 
+    //////////////////////////////////////////////////////
+    // 1. Generar una suma de 0 -> a y radom -> b      //
+    // 2. Generar una suma (5) de 0 -> b y radom -> a //
+    /////////////////////////////////////////////////////
+    initial begin
+      $display("\n  TEST #1");
+      adder_intf_i.add_a_zero_b_random();
+      #10
+      $display("ADD A ZERO B RANDOM");
+      $display("result: %b",adder_intf_i.result);
+   
+     repeat (5) begin
+     adder_intf_i.add_b_zero_a_random();
+     #10
+     $display("ADD B ZERO A RANDOM");
+     $display("result: %b",adder_intf_i.result);
+      end
+      ->TEST1_EV;
+      end
+  `endif
+ 
+   `ifdef TEST2
+   // Prueba 2 - 
+    /////////////////////////////////////////////////////////
+    // 1. Generar una suma(5) de random -> a y radom -> b //
+    // 2. Generar una suma de 0 -> b y 0 -> a              //
+    /////////////////////////////////////////////////////////
+    initial begin
+    wait(TEST1_EV.triggered);
+    $display("\n  TEST #2");
+    adder_intf_i.add_a_b_zero();
+    #10
+    $display("ADD A Y B ZEROS");
+    $display("result: %b",adder_intf_i.result);
+    
+    repeat(5) begin 
+    adder_intf_i.add_a_b_random();
+    #10
+    $display("ADD A Y B RANDOM");
+    $display("result: %b",adder_intf_i.result);
+    end
+    ->TEST2_EV;
+    end
+   `endif
+   //instancia de la segunda interfaz
+   div_intf#(ADDER_WIDTH) div_intf_i();
+   
+    sumador #(ADDER_WIDTH /*Pre-synthesis*/ ) DUT_2 (
+      .result(div_intf_i.result), // conectamos el puerto result del DUT con la variable result de la instancia de la interface
+      .a(div_intf_i.a),
+      .b(div_intf_i.b)
+  );
+  `define TEST3
+  
+  `ifdef TEST3
+  // Prueba 3 - 
+    /////////////////////////////////////////////////////////
+    // 1. Genera un desbordameinto en a                    //
+    // 2. Genera un desbordamiento en b                    //
+    // 3. Genera un desbordamiento en a y b                //
+    /////////////////////////////////////////////////////////
+      initial begin 
+        wait(TEST2_EV.triggered);
+        $display("\n  TEST #3");
+        repeat (5) begin
+            div_intf_i.a_bigger_than_8_bits();
+            #10
+            $display("OVERFLOW IN A");
+            $display("a : %b b: %b", div_intf_i.a, div_intf_i.b);
+            $display("result: %b",div_intf_i.result);
+        end
+        
+        repeat (5) begin
+            div_intf_i.b_bigger_than_8_bits();
+            #10
+            $display("OVERFLOW IN B");
+            $display("a : %b b: %b", div_intf_i.a, div_intf_i.b);
+            $display("result: %b",div_intf_i.result);
+        end
+        
+        div_intf_i.both_are_bigger_than_8_bits();
+        #10
+        $display("OVERFLOW IN BOTH");
+        $display("result: %b",div_intf_i.result);
+      
+      end 
+  `endif 
+   
+   endmodule: tb
+
+  interface adder_intf #(parameter WIDTH = 8 /*Pre-synthesis*/ ) ();
+ //Declaracion de variable de conexion
+  logic [WIDTH-1:0] a;
+  logic [WIDTH-1:0] b;
+  logic [WIDTH-1:0] result;
+ 
+ //funciones
+ //This function can be used to randomized the different inputs
+  function add_a_zero_b_random(); //1
+    a = '0;
+    std::randomize(b);
+  endfunction
+  
+   function add_b_zero_a_random();
+    b = '0;
+    std::randomize(a);
+  endfunction
+  
+  function add_a_b_random();
+    std::randomize(a);
+    std::randomize(b);
+  endfunction
+  
+  function add_a_b_zero();
+    a = '0;
+    b = '0;
+   endfunction
+endinterface: adder_intf
+
+// Intarface to made mistakes.
+interface div_intf #(parameter WIDTH = 8 /* Pre-synthesis */) ();
+  logic [WIDTH-1:0] a;
+  logic [WIDTH-1:0] b;
+  logic [WIDTH-1:0] result;
+  
+  function a_bigger_than_8_bits();
+      a ='h100;
+      std::randomize(b);
+  endfunction
+  function b_bigger_than_8_bits();
+    b='h100;
+    std::randomize(a);
+  endfunction
+  function both_are_bigger_than_8_bits();
+    a='h100;
+    b='h100;
+  endfunction
+ 
+endinterface: div_intf
